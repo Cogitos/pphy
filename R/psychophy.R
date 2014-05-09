@@ -1,0 +1,161 @@
+#' Psychophy processes psychophysic raw data to fitted value
+#' 
+#' This function processes psychophysic raw data to compute 
+#'  descriptive data by condition and by subjects; fit the data
+#'  by subject; and extract the slopes and PSS index.
+#'  
+#' The fitting is done using the fitPPCurve function of the
+#'  present package which use the 'modelfree' package to fit
+#'  the data locally
+#' (see \url{http://personalpages.manchester.ac.uk/staff/d.h.foster/software-modelfree/latest/index.html)}
+#' 
+#' @author
+#' Guillaume T. Vallet \email{gtvallet@@gmail.com}
+#' 
+#' Maintainer: Guillaume T. Vallet \email{gtvallet@@gmail.com}
+#' @param data A data frame in long format (one row per record).
+#' @param wid A string indicating the column name of the subjects
+#'  or observations. Defaults to "subject_nr".
+#' @param stim A string indicating the column name of the physical
+#'  stimulation (e.g. luminance, sound intensity...). 
+#' @param resp A string indicating the column name of the response
+#'  as 0 and 1. The function will remove all values below 0 and above 1.
+#'  Defaults to "correct".
+#' @param vars A vector of string indicating the column name of the
+#'  dependent variables.
+#' @param axnames A vector of length 2 with the stings to use as
+#'  y label and x label in the graphs. The function automatically add
+#'  "Proportion of " for the y label. Defaults to NULL. 
+#' @return Return a list with : 
+#'  Means_per_subjects: a data frame of means by condition and by
+#'   subjects, a data frame 
+#'  Descript_data: a data frame of descriptive data by condition
+#'  Fit: a data frame of fitted values (slopes and PSS)
+#'  Graphs: a list of two graphics, by subjects (BySubj) and global.
+#' @keywords psychophysic 
+#' @export
+#' @examples
+#' ### Generate fake date to use the function ---------------------------------
+#' # Levels of the physical stimulation
+
+psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NULL, axnames=NULL){
+  # GT Vallet  -- CRIUGM
+  # 2014/04/14 -- v1
+
+  # Prepare when to display a warning
+  op = options("warn")
+  on.exit(options(op))
+  
+  ################################################################
+  ###
+  ###        PREPARE THE DATA
+  ###
+  #Sort the unique levels of the physical stimulus
+  stim_level = sort( unique( data[, match(stim, names(data))] ) )
+  #Replace the orignal name of the response column by 'resp' to simply function reading
+  names(data)[match(resp, names(data))] = 'resp'
+  #Filter responses to keep only a binary response mode 0/1
+  datat = subset(data, data$resp >= 0 && data$resp <=1)
+  
+  # compute the number of correct response, the number of trials, the mean by
+  #   stimulus level by condition and by subject after removing incorrect response
+  dt.subj = ddply(data, 
+                  c(wid, vars, stim), 
+                  summarise,
+                      nb_corr   = sum(resp),
+                      nb_trials = length(resp),
+                      mean = round(mean(resp), 2)
+                  )
+  #Copy the stimulus column to a new column names 'stim'
+  dt.subj$stim = dt.subj[ , match(stim, names(dt.subj)) ]
+  
+  
+  ################################################################
+  ###
+  ###        FIT RAW DATA WITH THE MODELFREE PACKAGE
+  ###
+  options(warn=1)
+  warning( "Fitting data could take time, please be patient" )
+  options(warn=-1)
+  #Fit data with modelfree
+  fit = dlply(dt.subj, c(wid, vars), function(df) fitPPCurve( df$stim, df$nb_corr, df$nb_trials )) 
+  
+  # compute the mean by subject and by condition
+  dt.avg = ddply(dt.subj, 
+                  c(wid, vars), 
+                  summarise,
+                  mean = mean(nb_corr)
+  )
+  
+  # format the pfit and slope/pss data from the fitted data
+  pfitted  = ldply(fit, function(x) rbind(x[[1]]))
+  dtfitted = ldply(fit, function(x) rbind(x[[2]]))
+  names(pfitted)= stim_level
+  pfitted$subj  = dt.avg[,match(wid,names(dt.avg))]
+  pfitted$cond  = dt.avg[,match(vars,names(dt.avg))]
+  dtfitted$subj = dt.avg[,match(wid,names(dt.avg))]
+  dtfitted$cond = dt.avg[,match(vars,names(dt.avg))]
+  dtfitted      = dtfitted[,c(3, 4, 1, 2)]
+  
+  # Compute means, standard errors and confidence intervalls per conditions across subjects
+  descp_data = reportWithin(data=dt.subj, dv='mean', within=c(vars, stim), wid=wid)
+  descp_data = descp_data[,-5]
+ 
+  if( length(vars)<3 & length(vars)>1  ){
+    # Format as wide table the average data
+    dt.avg = reshape(descp_data, idvar=vars, timevar=stim, direction="wide", drop=c("N","sd","se","ci"))
+    names(dt.avg)[-1] = stim_level
+  }
+  
+  temp = reshape(pfitted, varying=list(names(pfitted)[1:length(stim_level)]), v.names="pfit", idvar=c('subj', 'cond'), timevar='Stimulus', direction="long")
+  temp = arrange(temp, subj, cond)
+  pfit = temp$pfit
+  dt.subj = cbind(dt.subj, pfit)
+
+  
+  ################################################################
+  ###
+  ###        PRODUCE PLOT PER SUBJECT AND AVERAGED
+  ###
+  xax   = mean( unique( dt.subj[,match(stim,names(dt.subj))] ) )   
+  xstim = unique( dt.subj[,match(stim,names(dt.subj))] )
+  # Draw the graphs by subject
+  plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='mean', group=vars)) + 
+            geom_point(aes_string(group=vars, colour=vars, shape=vars), size=2) + 
+            geom_line(aes_string(x=stim, y='pfit', group=vars, colour=vars), size=1) +
+            scale_x_continuous(breaks=c(xstim), labels=c(xstim)) +
+            facet_wrap(as.formula(paste("~", wid)))
+  if( !is.null(axnames) ){
+    plot.bysubj = plot.bysubj + xlab(axnames[2]) + ylab(axnames[1])
+  }
+  # Add the lines to mark the object point of equality
+  plot.bysubj = plot.bysubj +
+            geom_segment(mapping=aes_string(x=xax, y=0, xend=xax, yend=.5), 
+                  color='gray50', linetype="dashed", size=.2) +
+            geom_segment(mapping=aes_string(x=xstim[1], y=0.5, xend=xax, yend=.5), 
+                  color='gray50', linetype="dashed", size=.2)
+  # Customize the theme
+  plot.bysubj = plot.bysubj + theme_bw() + 
+            theme(# Grid ---------------------------
+                  panel.grid.minor = element_blank(),
+                  panel.grid.major = element_blank(),
+                  # Legend -------------------------
+                  legend.title=element_blank(), 
+                  legend.position="top",
+                  legend.key.width=unit(4, "lines"), legend.key.height=unit(2, "lines"),
+                  legend.text=element_text(size = 16),
+                  # Axis ---------------------------
+                  axis.title.x = element_text(face = 'bold', size = 20, vjust =-1), 
+                  axis.title.y = element_text(face = 'bold', size = 20, vjust = 0.1),
+                  axis.text.x  = element_text(size = 20), 
+                  axis.text.y  = element_text(size = 20),
+                  # Facet -------------------------
+                  strip.text.x = element_text(size = 16),
+                  plot.margin  = unit(c(.5,0.5,1.5,.9), "cm")
+            )  
+  
+  plot.avg = plotPPCurve(descp_data, vars=c(wid, vars), xvar=stim, resp='mean', se=T, axnames=axnames)       
+      
+  return(list(Means_per_subjects=dt.subj, Descript_data=descp_data, Fit=dtfitted,
+              Graphs=list(BySubj=plot.bysubj, Global=plot.avg)))
+}

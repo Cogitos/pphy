@@ -1,0 +1,15 @@
+Package: pphy
+Title: Fit psychophysic data, extract slopes and PSS and draw plots by subjects and by average.
+Version: 0.1
+Authors@R: "First Last <first.last@example.com> [aut, cre]"
+Description: A set of functions to fit data from a psychophysic experiment with the modelfree package (fit locally). Extract the slopes and the point of subjective equivalence. Return a matrix of plots, one per subject, with the row data and the fitted values as well as a general plot (means per condition across subjects).
+Depends:
+    R (>= 3.1.0),
+    plyr,
+    modelfree,
+    ggplot2,
+    grid,
+    gridExtra,
+    predata
+License: CC-BY-NC-SA
+LazyData: true
