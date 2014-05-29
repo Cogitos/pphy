@@ -57,7 +57,7 @@ data = rbind(
        trials = c(19, 20, 20, 20, 19, 20, 18, 20, 19, 20)),
    data.frame(subject=3, stim = 1:10, cond='c1',
        corr = c(0, 2, 3, 6, 10, 16, 15, 18, 19, 20),
-       trials = c(20, 20, 19, 20, 20, 20, 18, 20, 18, 20))
+       trials = c(20, 20, 19, 20, 20, 20, 18, 20, 18, 20)),
    data.frame(subject=1, stim = 1:10, cond='c2',
        corr = c(0, 1, 4, 6, 11, 15, 17, 18, 19, 20),
        trials = c(20, 20, 19, 20, 18, 19, 20, 20, 19, 20)),
@@ -70,8 +70,8 @@ data = rbind(
    )
 
 ### Fitting the curve with the modelfree adapation -------------------------
-fitted = psychophy(data, wid='subject', stim='NULL'stim', resp='corr',
-               vars='cond'
+fitted = psychophy(data, wid='subject', stim='stim', resp='corr',
+               vars='cond')
 fitted
 }
 \author{
