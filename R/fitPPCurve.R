@@ -43,7 +43,7 @@ fitPPCurve = function(stim_level, nb_corr, nb_trials){
   # GT Vallet  -- CRIUGM
   # 2014/04/09 -- v01
   # 2014/05/28 -- v01.5 -- Fix level stim not used as PSS value
-  #                        Add JND
+  #                        Add JND and increase x resolution
   
   toreturn = list(NULL) # prepare the list to return the results
   # prepare the arguments needed for the modelfree package
@@ -54,22 +54,23 @@ fitPPCurve = function(stim_level, nb_corr, nb_trials){
   }else{
     stim_level = unique(stim_level)  
   }
-  xfit    = stim_level
   bwd_min = min( diff( stim_level) )
   bwd_max = max( stim_level ) - min( stim_level )
   bwd     = bandwidth_cross_validation( nb_corr, nb_trials, stim_level, c( bwd_min, bwd_max ) )
   bwd     = bwd$deviance
   
   # fit the data
+  numxfit = 499 # Number of points to be generated minus 1
+  xfit = (max(stim_level)-min(stim_level)) * (0:numxfit) / numxfit + min(stim_level) # Values of x at which to estimate the psychometric function
   pfit = locglmfit( xfit, nb_corr, nb_trials, stim_level, bwd )$pfit
   
   # extract the slopes and the PSS   
   fitted  = threshold_slope( pfit , xfit ) 
-  pss     = fitted$x_th
-  slope   = round(fitted$slope*100, 2)
+  pss     = round( fitted$x_th, 4 )
+  slope   = round( fitted$slope*100, 4 )
   x25     = threshold_slope( pfit , xfit, 0.25 )
   x75     = threshold_slope( pfit , xfit, 0.75 )
-  jnd     = (x75$x_th - x25$x_th) /2
+  jnd     = (x75$x_th - x25$x_th) / 2
  
   # add data to return to the list
   toreturn[[1]] = pfit
