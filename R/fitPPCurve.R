@@ -62,6 +62,7 @@ fitPPCurve = function(stim_level, nb_corr, nb_trials){
   # fit the data
   numxfit = 499 # Number of points to be generated minus 1
   xfit = (max(stim_level)-min(stim_level)) * (0:numxfit) / numxfit + min(stim_level) # Values of x at which to estimate the psychometric function
+  xfit = sort(unique(c(xfit, stim_level)))
   pfit = locglmfit( xfit, nb_corr, nb_trials, stim_level, bwd )$pfit
   
   # extract the slopes and the PSS   
@@ -73,7 +74,7 @@ fitPPCurve = function(stim_level, nb_corr, nb_trials){
   jnd     = (x75$x_th - x25$x_th) / 2
  
   # add data to return to the list
-  toreturn[[1]] = pfit
+  toreturn[[1]] = pfit[xfit %in% stim_level]
   toreturn[[2]] = cbind(slope, pss, jnd)
   names(toreturn)[[1]]  = 'pfit'
   names(toreturn)[[2]]  = 'fitted'
