@@ -71,7 +71,7 @@ fitPPCurve = function(stim_level, nb_corr, nb_trials){
   slope   = round( fitted$slope*100, 4 )
   x25     = threshold_slope( pfit , xfit, 0.25 )
   x75     = threshold_slope( pfit , xfit, 0.75 )
-  jnd     = (x75$x_th - x25$x_th) / 2
+  jnd     = round( (x75$x_th - x25$x_th) / 2, 4 )
  
   # add data to return to the list
   toreturn[[1]] = pfit[xfit %in% stim_level]
