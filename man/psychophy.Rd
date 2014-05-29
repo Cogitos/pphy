@@ -27,9 +27,12 @@ y label and x label in the graphs. The function automatically add
 "Proportion of " for the y label. Defaults to NULL.}
 }
 \value{
-Return a list with a data frame of raw data, a data frame
- of descriptive data by subject and condition, a data frame of fitted
- values (slopes and PSS) and a list of two graphics, by subjects and global.
+Return a list with :
+ Means_per_subjects: a data frame of means by condition and by
+  subjects, a data frame
+ Descript_data: a data frame of descriptive data by condition
+ Fit: a data frame of fitted values (slopes and PSS)
+ Graphs: a list of two graphics, by subjects (BySubj) and global.
 }
 \description{
 This function processes psychophysic raw data to compute
@@ -45,11 +48,40 @@ The fitting is done using the fitPPCurve function of the
 \examples{
 ### Generate fake date to use the function ---------------------------------
 # Levels of the physical stimulation
+data = rbind(
+   data.frame(subject=1, stim = 1:10, cond='c1',
+       corr = c(0, 0, 3, 5, 10, 14, 16, 18, 19, 20),
+       trials = c(20, 20, 19, 20, 18, 19, 20, 20, 19, 20)),
+   data.frame(subject=2, stim = 1:10, cond='c1',
+       corr = c(1, 0, 2, 6, 11, 15, 15, 19, 20, 20),
+       trials = c(19, 20, 20, 20, 19, 20, 18, 20, 19, 20)),
+   data.frame(subject=3, stim = 1:10, cond='c1',
+       corr = c(0, 2, 3, 6, 10, 16, 15, 18, 19, 20),
+       trials = c(20, 20, 19, 20, 20, 20, 18, 20, 18, 20))
+   data.frame(subject=1, stim = 1:10, cond='c2',
+       corr = c(0, 1, 4, 6, 11, 15, 17, 18, 19, 20),
+       trials = c(20, 20, 19, 20, 18, 19, 20, 20, 19, 20)),
+   data.frame(subject=2, stim = 1:10, cond='c2',
+       corr = c(0, 0, 3, 8, 13, 16, 17, 19, 20, 20),
+       trials = c(19, 20, 20, 20, 19, 20, 18, 20, 19, 20)),
+   data.frame(subject=3, stim = 1:10, cond='c2',
+       corr = c(0, 1, 3, 7, 12, 14, 16, 17, 19, 20),
+       trials = c(20, 20, 19, 20, 20, 20, 18, 20, 18, 20)),
+   )
+
+### Fitting the curve with the modelfree adapation -------------------------
+fitted = psychophy(data, wid='subject', stim='NULL'stim', resp='corr',
+               vars='cond'
+fitted
 }
 \author{
 Guillaume T. Vallet \email{gtvallet@gmail.com}
 
 Maintainer: Guillaume T. Vallet \email{gtvallet@gmail.com}
+}
+\seealso{
+See \code{vignette("locglmfit", package = "modelfree")} for more details on
+the fit function used.
 }
 \keyword{psychophysic}
 

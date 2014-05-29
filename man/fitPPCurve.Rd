@@ -18,7 +18,7 @@ in a given condition (should be of the same length than the nb_corr).}
 }
 \value{
 Return a list with a vector of fitted value for each point
- of the initial nb_corr variable and the extracted slope and PSS value.
+ of the initial nb_corr variable and the extracted slope, PSS and JND values.
 }
 \description{
 This function use the 'modelfree'package to fit locally

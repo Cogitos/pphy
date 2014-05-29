@@ -16,7 +16,7 @@
 #' @param nb_trials A vector of number of trials of a given subject
 #'  in a given condition (should be of the same length than the nb_corr).
 #' @return Return a list with a vector of fitted value for each point
-#'  of the initial nb_corr variable and the extracted slope and PSS value.
+#'  of the initial nb_corr variable and the extracted slope, PSS and JND values.
 #' @keywords psychophysic 
 #' @export
 #' @examples
@@ -42,13 +42,17 @@
 fitPPCurve = function(stim_level, nb_corr, nb_trials){
   # GT Vallet  -- CRIUGM
   # 2014/04/09 -- v01
+  # 2014/05/28 -- v01.5 -- Fix level stim not used as PSS value
+  #                        Add JND
   
   toreturn = list(NULL) # prepare the list to return the results
   # prepare the arguments needed for the modelfree package
-  if( is.factor(stim_level) | is.character(stim_level) ){
+  if( is.character(stim_level) ){
     stim_level = 1:length( unique(stim_level) )
+  }else if( is.factor(stim_level) ){
+    stim_level = as.numeric(levels(stim_level))[stim_level]
   }else{
-    stim_level = unique( stim_level )
+    stim_level = unique(stim_level)  
   }
   xfit    = stim_level
   bwd_min = min( diff( stim_level) )
@@ -63,10 +67,13 @@ fitPPCurve = function(stim_level, nb_corr, nb_trials){
   fitted  = threshold_slope( pfit , xfit ) 
   pss     = fitted$x_th
   slope   = round(fitted$slope*100, 2)
+  x25     = threshold_slope( pfit , xfit, 0.25 )
+  x75     = threshold_slope( pfit , xfit, 0.75 )
+  jnd     = (x75$x_th - x25$x_th) /2
  
   # add data to return to the list
   toreturn[[1]] = pfit
-  toreturn[[2]] = cbind(slope, pss)
+  toreturn[[2]] = cbind(slope, pss, jnd)
   names(toreturn)[[1]]  = 'pfit'
   names(toreturn)[[2]]  = 'fitted'
   

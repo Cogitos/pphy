@@ -37,10 +37,39 @@
 #' @examples
 #' ### Generate fake date to use the function ---------------------------------
 #' # Levels of the physical stimulation
+#' data = rbind(
+#'    data.frame(subject=1, stim = 1:10, cond='c1',
+#'        corr = c(0, 0, 3, 5, 10, 14, 16, 18, 19, 20),
+#'        trials = c(20, 20, 19, 20, 18, 19, 20, 20, 19, 20)),
+#'    data.frame(subject=2, stim = 1:10, cond='c1',
+#'        corr = c(1, 0, 2, 6, 11, 15, 15, 19, 20, 20),
+#'        trials = c(19, 20, 20, 20, 19, 20, 18, 20, 19, 20)),
+#'    data.frame(subject=3, stim = 1:10, cond='c1',
+#'        corr = c(0, 2, 3, 6, 10, 16, 15, 18, 19, 20),
+#'        trials = c(20, 20, 19, 20, 20, 20, 18, 20, 18, 20))
+#'    data.frame(subject=1, stim = 1:10, cond='c2',
+#'        corr = c(0, 1, 4, 6, 11, 15, 17, 18, 19, 20),
+#'        trials = c(20, 20, 19, 20, 18, 19, 20, 20, 19, 20)),
+#'    data.frame(subject=2, stim = 1:10, cond='c2',
+#'        corr = c(0, 0, 3, 8, 13, 16, 17, 19, 20, 20),
+#'        trials = c(19, 20, 20, 20, 19, 20, 18, 20, 19, 20)),
+#'    data.frame(subject=3, stim = 1:10, cond='c2',
+#'        corr = c(0, 1, 3, 7, 12, 14, 16, 17, 19, 20),
+#'        trials = c(20, 20, 19, 20, 20, 20, 18, 20, 18, 20)),
+#'    )    
+#' 
+#' ### Fitting the curve with the modelfree adapation -------------------------
+#' fitted = psychophy(data, wid='subject', stim='NULL'stim', resp='corr', 
+#'                vars='cond'
+#' fitted
+#' 
+#' @seealso See \code{vignette("locglmfit", package = "modelfree")} for more details on
+#' the fit function used.
 
 psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NULL, axnames=NULL){
   # GT Vallet  -- CRIUGM
   # 2014/04/14 -- v1
+  # 2014/05/28 -- v1.5 -- Fix a minor bug in the generation of graphs
 
   # Prepare when to display a warning
   op = options("warn")
@@ -90,12 +119,12 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   # format the pfit and slope/pss data from the fitted data
   pfitted  = ldply(fit, function(x) rbind(x[[1]]))
   dtfitted = ldply(fit, function(x) rbind(x[[2]]))
-  names(pfitted)= stim_level
+  names(pfitted)[-c(1:2)] = as.character(stim_level)
   pfitted$subj  = dt.avg[,match(wid,names(dt.avg))]
   pfitted$cond  = dt.avg[,match(vars,names(dt.avg))]
   dtfitted$subj = dt.avg[,match(wid,names(dt.avg))]
   dtfitted$cond = dt.avg[,match(vars,names(dt.avg))]
-  dtfitted      = dtfitted[,c(3, 4, 1, 2)]
+  dtfitted      = dtfitted[,c(1:5)]
   
   # Compute means, standard errors and confidence intervalls per conditions across subjects
   descp_data = reportWithin(data=dt.subj, dv='mean', within=c(vars, stim), wid=wid)
@@ -107,7 +136,8 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
     names(dt.avg)[-1] = stim_level
   }
   
-  temp = reshape(pfitted, varying=list(names(pfitted)[1:length(stim_level)]), v.names="pfit", idvar=c('subj', 'cond'), timevar='Stimulus', direction="long")
+  temp = reshape(pfitted, direction="long", varying=list(as.character(stim_level)), v.names="pfit", 
+                 idvar=c("subj","cond"), timevar="Stim")
   temp = arrange(temp, subj, cond)
   pfit = temp$pfit
   dt.subj = cbind(dt.subj, pfit)
@@ -117,22 +147,22 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   ###
   ###        PRODUCE PLOT PER SUBJECT AND AVERAGED
   ###
-  xax   = mean( unique( dt.subj[,match(stim,names(dt.subj))] ) )   
-  xstim = unique( dt.subj[,match(stim,names(dt.subj))] )
+  xax = ceiling( length(stim_level)/2 )
+  xstim = as.character( stim_level )
   # Draw the graphs by subject
   plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='mean', group=vars)) + 
             geom_point(aes_string(group=vars, colour=vars, shape=vars), size=2) + 
             geom_line(aes_string(x=stim, y='pfit', group=vars, colour=vars), size=1) +
-            scale_x_continuous(breaks=c(xstim), labels=c(xstim)) +
+            scale_x_discrete(breaks=c(xstim), labels=c(xstim)) +
             facet_wrap(as.formula(paste("~", wid)))
   if( !is.null(axnames) ){
-    plot.bysubj = plot.bysubj + xlab(axnames[2]) + ylab(axnames[1])
+    plot.bysubj = plot.bysubj + xlab(axnames[2]) + ylab(paste("Proportion of '", axnames[1], "'",  sep=''))
   }
   # Add the lines to mark the object point of equality
   plot.bysubj = plot.bysubj +
             geom_segment(mapping=aes_string(x=xax, y=0, xend=xax, yend=.5), 
                   color='gray50', linetype="dashed", size=.2) +
-            geom_segment(mapping=aes_string(x=xstim[1], y=0.5, xend=xax, yend=.5), 
+            geom_segment(mapping=aes_string(x=0, y=0.5, xend=xax, yend=.5), 
                   color='gray50', linetype="dashed", size=.2)
   # Customize the theme
   plot.bysubj = plot.bysubj + theme_bw() + 
