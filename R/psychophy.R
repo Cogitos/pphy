@@ -147,22 +147,25 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   ###
   ###        PRODUCE PLOT PER SUBJECT AND AVERAGED
   ###
-  xax = ceiling( length(stim_level)/2 )
+  if( is.character(stim_level) ){
+    xax = ceiling( length(stim_level)/2 )
+  }else{
+    xax = round( mean(stim_level) )
+  } 
   xstim = as.character( stim_level )
   # Draw the graphs by subject
   plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='mean', group=vars)) + 
             geom_point(aes_string(group=vars, colour=vars, shape=vars), size=2) + 
             geom_line(aes_string(x=stim, y='pfit', group=vars, colour=vars), size=1) +
-            scale_x_discrete(breaks=c(xstim), labels=c(xstim)) +
             facet_wrap(as.formula(paste("~", wid)))
   if( !is.null(axnames) ){
     plot.bysubj = plot.bysubj + xlab(axnames[2]) + ylab(paste("Proportion of '", axnames[1], "'",  sep=''))
   }
   # Add the lines to mark the object point of equality
   plot.bysubj = plot.bysubj +
-            geom_segment(mapping=aes_string(x=xax, y=0, xend=xax, yend=.5), 
-                  color='gray50', linetype="dashed", size=.2) +
-            geom_segment(mapping=aes_string(x=0, y=0.5, xend=xax, yend=.5), 
+            geom_segment(mapping=aes_string(x=xax, y=0, xend=xax, yend=0.5), 
+                  color='gray50', linetype="dashed", size=0.2) +
+            geom_segment(mapping=aes_string(x=0, y=0.5, xend=xax, yend=0.5), 
                   color='gray50', linetype="dashed", size=.2)
   # Customize the theme
   plot.bysubj = plot.bysubj + theme_bw() + 
