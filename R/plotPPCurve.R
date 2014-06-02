@@ -59,9 +59,9 @@ plotPPCurve = function(dt, vars=NULL, xvar=NULL, resp="resp", se=F, axnames=NULL
     
   # For psychophysic experiment, add the POS
   # Line 50%-----------------------------
-  if( is.character(dt[,xvar]){ 
-    xax = ceiling( length(unique(dt[,xvar]))/ 2 )
-  }else{ is.factor(dt[,xvar])==T ){
+  if( is.character(dt[,xvar])){
+    xax = ceiling( length(unique(dt[,xvar]))/2 )
+  }else if( is.factor(dt[,xvar])==T ){
     xax = mean(as.numeric(unique(dt[,xvar])))
   }else {
     xax = mean(unique(dt[,xvar]))
