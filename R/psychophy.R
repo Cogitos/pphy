@@ -116,7 +116,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
                   mean = mean(nb_corr)
   )
   
-  # format the pfit and slope/pss data from the fitted data
+  # format the pfit and the slopes/pss/jnd indexes extracted from the fitted data
   pfitted  = ldply(fit, function(x) rbind(x[[1]]))
   dtfitted = ldply(fit, function(x) rbind(x[[2]]))
   names(pfitted)[-c(1:2)] = as.character(stim_level)
@@ -166,7 +166,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
             geom_segment(mapping=aes_string(x=xax, y=0, xend=xax, yend=0.5), 
                   color='gray50', linetype="dashed", size=0.2) +
             geom_segment(mapping=aes_string(x=0, y=0.5, xend=xax, yend=0.5), 
-                  color='gray50', linetype="dashed", size=.2)
+                  color='gray50', linetype="dashed", size=0.2)
   # Customize the theme
   plot.bysubj = plot.bysubj + theme_bw() + 
             theme(# Grid ---------------------------

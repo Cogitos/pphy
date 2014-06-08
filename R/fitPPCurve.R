@@ -44,6 +44,7 @@ fitPPCurve = function(stim_level, nb_corr, nb_trials){
   # 2014/04/09 -- v01
   # 2014/05/28 -- v01.5 -- Fix level stim not used as PSS value
   #                        Add JND and increase x resolution
+  # 2014/06/07 -- v01.6 -- Fix slope coefficient wrongly multiply
   
   toreturn = list(NULL) # prepare the list to return the results
   # prepare the arguments needed for the modelfree package
@@ -66,9 +67,9 @@ fitPPCurve = function(stim_level, nb_corr, nb_trials){
   pfit = locglmfit( xfit, nb_corr, nb_trials, stim_level, bwd )$pfit
   
   # extract the slopes and the PSS   
-  fitted  = threshold_slope( pfit , xfit ) 
+  fitted  = threshold_slope( pfit, xfit ) 
   pss     = round( fitted$x_th, 4 )
-  slope   = round( fitted$slope*100, 4 )
+  slope   = round( fitted$slope, 4 )
   x25     = threshold_slope( pfit , xfit, 0.25 )
   x75     = threshold_slope( pfit , xfit, 0.75 )
   jnd     = round( (x75$x_th - x25$x_th) / 2, 4 )
