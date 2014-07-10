@@ -55,7 +55,7 @@
 #'        trials = c(19, 20, 20, 20, 19, 20, 18, 20, 19, 20)),
 #'    data.frame(subject=3, stim = 1:10, cond='c2',
 #'        corr = c(0, 1, 3, 7, 12, 14, 16, 17, 19, 20),
-#'        trials = c(20, 20, 19, 20, 20, 20, 18, 20, 18, 20)),
+#'        trials = c(20, 20, 19, 20, 20, 20, 18, 20, 18, 20))
 #'    )    
 #' 
 #' ### Fitting the curve with the modelfree adapation -------------------------
@@ -93,7 +93,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
                   summarise,
                       nb_corr   = sum(resp),
                       nb_trials = length(resp),
-                      mean = round(mean(resp), 2)
+                      ratio = round(mean(resp), 2)
                   )
   #Copy the stimulus column to a new column names 'stim'
   dt.subj$stim = dt.subj[ , match(stim, names(dt.subj)) ]
@@ -147,11 +147,15 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   ###
   ###        PRODUCE PLOT PER SUBJECT AND AVERAGED
   ###
-  if( is.character(stim_level) ){
-    xax = ceiling( length(stim_level)/2 )
+  if( length(stim_level)%%2 == 0){
+    if( is.character(stim_level) | is.factor(stim_level) ){
+      xax =  ( length(stim_level)/2 ) + 0.5
+    }else{
+      xax =  mean(stim_level)
+    }
   }else{
-    xax = round( mean(stim_level) )
-  } 
+     xax =  mean(stim_level)
+  }
   xstim = as.character( stim_level )
   # Draw the graphs by subject
   plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='mean', group=vars)) + 
