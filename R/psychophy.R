@@ -127,7 +127,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   dtfitted      = dtfitted[,c(1:5)]
   
   # Compute means, standard errors and confidence intervalls per conditions across subjects
-  descp_data = reportWithin(data=dt.subj, dv='mean', within=c(vars, stim), wid=wid)
+  descp_data = reportWithin(data=dt.subj, dv='ratio', within=c(vars, stim), wid=wid)
   descp_data = descp_data[,-5]
  
   if( length(vars)<3 & length(vars)>1  ){
