@@ -150,15 +150,18 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   if( length(stim_level)%%2 == 0){
     if( is.character(stim_level) | is.factor(stim_level) ){
       xax =  ( length(stim_level)/2 ) + 0.5
+      x1 = stim_level[1]
     }else{
       xax =  mean(stim_level)
+      x1 = min(stim_level)
     }
   }else{
      xax =  mean(stim_level)
+     x1 = min(stim_level)
   }
   xstim = as.character( stim_level )
   # Draw the graphs by subject
-  plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='mean', group=vars)) + 
+  plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='ratio', group=vars)) + 
             geom_point(aes_string(group=vars, colour=vars, shape=vars), size=2) + 
             geom_line(aes_string(x=stim, y='pfit', group=vars, colour=vars), size=1) +
             facet_wrap(as.formula(paste("~", wid)))
@@ -169,7 +172,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   plot.bysubj = plot.bysubj +
             geom_segment(mapping=aes_string(x=xax, y=0, xend=xax, yend=0.5), 
                   color='gray50', linetype="dashed", size=0.2) +
-            geom_segment(mapping=aes_string(x=0, y=0.5, xend=xax, yend=0.5), 
+            geom_segment(mapping=aes_string(x=x1, y=0.5, xend=xax, yend=0.5), 
                   color='gray50', linetype="dashed", size=0.2)
   # Customize the theme
   plot.bysubj = plot.bysubj + theme_bw() + 
@@ -191,7 +194,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
                   plot.margin  = unit(c(.5,0.5,1.5,.9), "cm")
             )  
   
-  plot.avg = plotPPCurve(descp_data, vars=c(wid, vars), xvar=stim, resp='mean', se=T, axnames=axnames)       
+  plot.avg = plotPPCurve(descp_data, vars=c(wid, vars), xvar=stim, resp='ratio', se=T, axnames=axnames)       
       
   return(list(Means_per_subjects=dt.subj, Descript_data=descp_data, Fit=dtfitted,
               Graphs=list(BySubj=plot.bysubj, Global=plot.avg)))
