@@ -48,7 +48,7 @@ plotPPCurve = function(dt, vars=NULL, xvar=NULL, resp="resp", se=F, axnames=NULL
   if( vars == 1 ){
     plot = plot + geom_line(aes_string(group=vars), size=1, position=pd) 
   }else{
-    plot = plot + geom_line(aes_string(linetype=vars), size=1, position=pd)
+    plot = plot + geom_line(aes_string(linetype=vars, color=vars), size=1, position=pd)
   }
   plot = plot + geom_point(shape=21, fill="white", size=4, position=pd) 
     

@@ -119,26 +119,24 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   # format the pfit and the slopes/pss/jnd indexes extracted from the fitted data
   pfitted  = ldply(fit, function(x) rbind(x[[1]]))
   dtfitted = ldply(fit, function(x) rbind(x[[2]]))
-  names(pfitted)[-c(1:2)] = as.character(stim_level)
+  names(pfitted)[-c(1:(1+length(vars)))] = as.character(stim_level)
   pfitted$subj  = dt.avg[,match(wid,names(dt.avg))]
-  pfitted$cond  = dt.avg[,match(vars,names(dt.avg))]
-  dtfitted$subj = dt.avg[,match(wid,names(dt.avg))]
-  dtfitted$cond = dt.avg[,match(vars,names(dt.avg))]
-  dtfitted      = dtfitted[,c(1:5)]
+#  dtfitted$subj = dt.avg[,match(wid,names(dt.avg))]
+#  dtfitted$cond = dt.avg[,match(vars,names(dt.avg))]
+#  dtfitted      = dtfitted[,c(1:5)]
   
   # Compute means, standard errors and confidence intervalls per conditions across subjects
   descp_data = reportWithin(data=dt.subj, dv='ratio', within=c(vars, stim), wid=wid)
-  descp_data = descp_data[,-5]
- 
-  if( length(vars)<3 & length(vars)>1  ){
+  descp_data = subset(descp_data, select=-c(ratio_norm))
+  
+  if( length(vars)>1  ){
     # Format as wide table the average data
     dt.avg = reshape(descp_data, idvar=vars, timevar=stim, direction="wide", drop=c("N","sd","se","ci"))
-    names(dt.avg)[-1] = stim_level
+    names(dt.avg)[-c(1:length(vars))] = stim_level
   }
-  
+
   temp = reshape(pfitted, direction="long", varying=list(as.character(stim_level)), v.names="pfit", 
-                 idvar=c("subj","cond"), timevar="Stim")
-  temp = arrange(temp, subj, cond)
+                 idvar=c(wid, vars), timevar="Stim")
   pfit = temp$pfit
   dt.subj = cbind(dt.subj, pfit)
 
@@ -160,10 +158,14 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
      x1 = min(stim_level)
   }
   xstim = as.character( stim_level )
+
+  # Add a new column to plot the unique condition or the interaction of conditions
+  dt.subj$ggcond = interaction(dt.subj[,match(vars,names(dt.subj))])
+
   # Draw the graphs by subject
-  plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='ratio', group=vars)) + 
-            geom_point(aes_string(group=vars, colour=vars, shape=vars), size=2) + 
-            geom_line(aes_string(x=stim, y='pfit', group=vars, colour=vars), size=1) +
+  plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='ratio', group='ggcond')) + 
+            geom_point(aes(group=ggcond, color=ggcond, shape=ggcond), size=2) + 
+            geom_line(aes_string(x=stim, y='pfit', group='ggcond', color="ggcond"), size=1) +
             facet_wrap(as.formula(paste("~", wid)))
   if( !is.null(axnames) ){
     plot.bysubj = plot.bysubj + xlab(axnames[2]) + ylab(paste("Proportion of '", axnames[1], "'",  sep=''))
@@ -194,8 +196,13 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
                   plot.margin  = unit(c(.5,0.5,1.5,.9), "cm")
             )  
   
-  plot.avg = plotPPCurve(descp_data, vars=c(wid, vars), xvar=stim, resp='ratio', se=T, axnames=axnames)       
-      
+  if( length(vars)>1  ){
+    plot.avg = plotPPCurve(reportWithin(data=dt.subj, dv='ratio', within=c('ggcond', stim), wid=wid),
+                           vars=c(wid, 'ggcond'), xvar=stim, resp='ratio', se=T, axnames=axnames)
+  }else{
+    plot.avg = plotPPCurve(descp_data, vars=c(wid, vars), xvar=stim, resp='ratio', se=T, axnames=axnames)
+  }
+
   return(list(Means_per_subjects=dt.subj, Descript_data=descp_data, Fit=dtfitted,
               Graphs=list(BySubj=plot.bysubj, Global=plot.avg)))
 }
