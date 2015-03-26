@@ -70,6 +70,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   # GT Vallet  -- CRIUGM
   # 2014/04/14 -- v1
   # 2014/05/28 -- v1.5 -- Fix a minor bug in the generation of graphs
+  # 2015/03/26 -- v2   -- Handle multiple conditions 
 
   # Prepare when to display a warning
   op = options("warn")
@@ -120,27 +121,29 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   pfitted  = ldply(fit, function(x) rbind(x[[1]]))
   dtfitted = ldply(fit, function(x) rbind(x[[2]]))
   names(pfitted)[-c(1:(1+length(vars)))] = as.character(stim_level)
-  pfitted$subj  = dt.avg[,match(wid,names(dt.avg))]
-#  dtfitted$subj = dt.avg[,match(wid,names(dt.avg))]
-#  dtfitted$cond = dt.avg[,match(vars,names(dt.avg))]
-#  dtfitted      = dtfitted[,c(1:5)]
-  
+
+  # Reshape data from large to long format
+  temp = reshape(pfitted, direction="long", varying=list(as.character(stim_level)), v.names="pfit", 
+                 idvar=c(wid, vars), timevar="Stim")
+  # Combine newly compute pfitted values with the dt.subj data frame
+  dt.subj = cbind(
+      arrange_(dt.subj, wid, vars), 
+      pfit=arrange_(temp, wid, vars)$pfit
+  )
+
   # Compute means, standard errors and confidence intervalls per conditions across subjects
   descp_data = reportWithin(data=dt.subj, dv='ratio', within=c(vars, stim), wid=wid)
   descp_data = subset(descp_data, select=-c(ratio_norm))
-  
+  descp_data.fit = reportWithin(data=dt.subj, dv='pfit', within=c(vars, stim), wid=wid)
+  descp_data.fit = subset(descp_data.fit, select=-c(pfit_norm))
+
   if( length(vars)>1  ){
     # Format as wide table the average data
     dt.avg = reshape(descp_data, idvar=vars, timevar=stim, direction="wide", drop=c("N","sd","se","ci"))
     names(dt.avg)[-c(1:length(vars))] = stim_level
   }
-
-  temp = reshape(pfitted, direction="long", varying=list(as.character(stim_level)), v.names="pfit", 
-                 idvar=c(wid, vars), timevar="Stim")
-  pfit = temp$pfit
-  dt.subj = cbind(dt.subj, pfit)
-
   
+
   ################################################################
   ###
   ###        PRODUCE PLOT PER SUBJECT AND AVERAGED
@@ -197,12 +200,16 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
             )  
   
   if( length(vars)>1  ){
-    plot.avg = plotPPCurve(reportWithin(data=dt.subj, dv='ratio', within=c('ggcond', stim), wid=wid),
+    plot.avg     = plotPPCurve(reportWithin(data=dt.subj, dv='ratio', within=c('ggcond', stim), wid=wid),
                            vars=c(wid, 'ggcond'), xvar=stim, resp='ratio', se=T, axnames=axnames)
+    plot.avg.fit = plotPPCurve(reportWithin(data=dt.subj, dv='pfit', within=c('ggcond', stim), wid=wid),
+                           vars=c(wid, 'ggcond'), xvar=stim, resp='pfit', se=T, axnames=axnames)
   }else{
-    plot.avg = plotPPCurve(descp_data, vars=c(wid, vars), xvar=stim, resp='ratio', se=T, axnames=axnames)
+    plot.avg     = plotPPCurve(descp_data, vars=c(wid, vars), xvar=stim, resp='ratio', se=T, axnames=axnames)
+    plot.avg.fit = plotPPCurve(descp_data.fit, vars=c(wid, vars), xvar=stim, resp='pfit', se=T, axnames=axnames)
   }
 
+  dt.subj = subset(dt.subj, select=-c(ggcond))
   return(list(Means_per_subjects=dt.subj, Descript_data=descp_data, Fit=dtfitted,
-              Graphs=list(BySubj=plot.bysubj, Global=plot.avg)))
+              Graphs=list(BySubj=plot.bysubj, Global_Raw=plot.avg, Global_Fit=plot.avg.fit)))
 }
