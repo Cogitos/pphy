@@ -85,7 +85,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   #Replace the orignal name of the response column by 'resp' to simply function reading
   names(data)[match(resp, names(data))] = 'resp'
   #Filter responses to keep only a binary response mode 0/1
-  datat = subset(data, data$resp >= 0 && data$resp <=1)
+  data = subset(data, data$resp >= 0 && data$resp <=1)
   
   # compute the number of correct response, the number of trials, the mean by
   #   stimulus level by condition and by subject after removing incorrect response
@@ -125,18 +125,19 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   # Reshape data from large to long format
   temp = reshape(pfitted, direction="long", varying=list(as.character(stim_level)), v.names="pfit", 
                  idvar=c(wid, vars), timevar="Stim")
+  temp$Stim = factor(temp$Stim, labels = stim_level)
   # Combine newly compute pfitted values with the dt.subj data frame
-  dt.subj = cbind(
-      arrange_(dt.subj, wid, vars), 
-      pfit=arrange_(temp, wid, vars)$pfit
-  )
-
+  names(temp)[names(temp)=='Stim'] <- stim
+  dt.subj = join(dt.subj, temp[, c(wid, vars, stim, "pfit")], type="righ")
+  dt.subj = arrange_(dt.subj, wid, vars, stim)
+  
   # Compute means, standard errors and confidence intervalls per conditions across subjects
   descp_data = reportWithin(data=dt.subj, dv='ratio', within=c(vars, stim), wid=wid)
   descp_data = subset(descp_data, select=-c(ratio_norm))
+  descp_data = arrange_(descp_data, vars, stim)
   descp_data.fit = reportWithin(data=dt.subj, dv='pfit', within=c(vars, stim), wid=wid)
   descp_data.fit = subset(descp_data.fit, select=-c(pfit_norm))
-
+  
   if( length(vars)>1  ){
     # Format as wide table the average data
     dt.avg = reshape(descp_data, idvar=vars, timevar=stim, direction="wide", drop=c("N","sd","se","ci"))
@@ -150,8 +151,8 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   ###
   if( length(stim_level)%%2 == 0){
     if( is.character(stim_level) | is.factor(stim_level) ){
-      xax =  ( length(stim_level)/2 ) + 0.5
-      x1 = stim_level[1]
+      xax = ( length(stim_level)/2 ) + 0.5
+      x1 = 1
     }else{
       xax =  mean(stim_level)
       x1 = min(stim_level)
@@ -168,7 +169,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   # Draw the graphs by subject
   plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='ratio', group='ggcond')) + 
             geom_point(aes(group=ggcond, color=ggcond, shape=ggcond), size=2) + 
-            geom_line(aes_string(x=stim, y='pfit', group='ggcond', color="ggcond"), size=1) +
+            geom_line(aes_string(x=stim, y='pfit', group='ggcond', color='ggcond'), size=1) +
             facet_wrap(as.formula(paste("~", wid)))
   if( !is.null(axnames) ){
     plot.bysubj = plot.bysubj + xlab(axnames[2]) + ylab(paste("Proportion of '", axnames[1], "'",  sep=''))
