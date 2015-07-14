@@ -85,7 +85,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   #Replace the orignal name of the response column by 'resp' to simply function reading
   names(data)[match(resp, names(data))] = 'resp'
   #Filter responses to keep only a binary response mode 0/1
-  data = subset(data, data$resp >= 0 && data$resp <=1)
+  data = subset(data, data$resp >= 0 & data$resp <=1)
   
   # compute the number of correct response, the number of trials, the mean by
   #   stimulus level by condition and by subject after removing incorrect response
