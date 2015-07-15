@@ -23,7 +23,7 @@
 #'  Defaults to "correct".
 #' @param vars A vector of string indicating the column name of the
 #'  dependent variables.
-#' @param axnames A vector of length 2 with the stings to use as
+#' @param axnames A vector of length 2 with the strings to use as
 #'  y label and x label in the graphs. The function automatically add
 #'  "Proportion of " for the y label. Defaults to NULL. 
 #' @return Return a list with : 
@@ -172,7 +172,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
             geom_line(aes_string(x=stim, y='pfit', group='ggcond', color='ggcond'), size=1) +
             facet_wrap(as.formula(paste("~", wid)))
   if( !is.null(axnames) ){
-    plot.bysubj = plot.bysubj + xlab(axnames[2]) + ylab(paste("Proportion of '", axnames[1], "'",  sep=''))
+    plot.bysubj = plot.bysubj + xlab(axnames[2]) + ylab(paste("Proportion of ", axnames[1], sep=''))
   }
   # Add the lines to mark the object point of equality
   plot.bysubj = plot.bysubj +
