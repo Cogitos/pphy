@@ -3,7 +3,9 @@
 - **Author:** Guillaume T. Vallet, gtvallet@gmail.com, Université de Montréal, CRIUGM
 - **Version:** 0.2
 - **Date:** 2014/05/08
-- **Update:** 2014/11/04 -- Fix minor bug to display the horizontal line of the PSS
+- **Update:** 
+  - 2014/11/04 -- Fix minor bug to display the horizontal line of the PSS  
+  - 2015/03/26 -- Handle multiple conditions 
 
 *Pphy* is R package developed for a personal use to process psychophysic data.
 *Pphy* uses the [``modelfree``](http://personalpages.manchester.ac.uk/staff/d.h.foster/software-modelfree/latest/home) package to fit the data locally per subject.
@@ -36,6 +38,7 @@ This package is released under the [Creative Common Attribution-NonCommercial-Sh
 - ``ggplot2``,
 - ``grid``,
 - ``gridExtra``,
+- ``modelfree``,
 - ``predata``.
 
 All these packages, except *predata*, can be install by typing ``install.packages('package_name')`` in your R console.
