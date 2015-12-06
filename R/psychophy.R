@@ -149,17 +149,12 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   ###
   ###        PRODUCE PLOT PER SUBJECT AND AVERAGED
   ###
-  if( length(stim_level)%%2 == 0){
-    if( is.character(stim_level) | is.factor(stim_level) ){
-      xax = ( length(stim_level)/2 ) + 0.5
-      x1 = 1
-    }else{
-      xax =  mean(stim_level)
-      x1 = min(stim_level)
-    }
+  if( is.character(stim_level) | is.factor(stim_level) ){
+    xax = ( length(stim_level)/2 ) + 0.5
+    x1  = 1
   }else{
-     xax =  mean(stim_level)
-     x1 = min(stim_level)
+    xax = mean(stim_level)
+    x1  = min(stim_level)
   }
   xstim = as.character( stim_level )
 
