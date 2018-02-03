@@ -1,8 +1,8 @@
 #' Psychophy processes psychophysic raw data to fitted value
 #' 
 #' This function processes psychophysic raw data to compute 
-#'  descriptive data by condition and by subjects; fit the data
-#'  by subject; and extract the slopes and PSS index.
+#'  descriptive data by condition and by subject; fit the data
+#'  by subject; and then extract the slopes and PSS index.
 #'  
 #' The fitting is done using the fitPPCurve function of the
 #'  present package which use the 'modelfree' package to fit
@@ -71,6 +71,7 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   # 2014/04/14 -- v1
   # 2014/05/28 -- v1.5 -- Fix a minor bug in the generation of graphs
   # 2015/03/26 -- v2   -- Handle multiple conditions 
+  # 2018/02/03 -- v2.1 -- Fix bug when vars is NULL
 
   # Prepare when to display a warning
   op = options("warn")
@@ -128,13 +129,22 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
   temp$Stim = factor(temp$Stim, labels = stim_level)
   # Combine newly compute pfitted values with the dt.subj data frame
   names(temp)[names(temp)=='Stim'] <- stim
-  dt.subj = join(dt.subj, temp[, c(wid, vars, stim, "pfit")], type="righ")
-  dt.subj = arrange_(dt.subj, wid, vars, stim)
+  dt.subj = join(dt.subj, temp[, c(wid, vars, stim, "pfit")], type="right")
+  if( is.null(vars) ){
+    dt.subj = arrange_(dt.subj, wid, stim)
+  }else{
+    dt.subj = arrange_(dt.subj, wid, vars, stim)
+  }
   
   # Compute means, standard errors and confidence intervalls per conditions across subjects
   descp_data = reportWithin(data=dt.subj, dv='ratio', within=c(vars, stim), wid=wid)
   descp_data = subset(descp_data, select=-c(ratio_norm))
-  descp_data = arrange_(descp_data, vars, stim)
+  # 
+  if(is.null(vars)){
+    descp_data = arrange_(descp_data, stim)
+  }else{
+    descp_data = arrange_(descp_data, vars, stim)
+  }
   descp_data.fit = reportWithin(data=dt.subj, dv='pfit', within=c(vars, stim), wid=wid)
   descp_data.fit = subset(descp_data.fit, select=-c(pfit_norm))
   
@@ -157,15 +167,22 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
     x1  = min(stim_level)
   }
   xstim = as.character( stim_level )
-
+  
   # Add a new column to plot the unique condition or the interaction of conditions
-  dt.subj$ggcond = interaction(dt.subj[,match(vars,names(dt.subj))])
-
-  # Draw the graphs by subject
-  plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='ratio', group='ggcond')) + 
+  if( is.null(vars) ){
+    # Draw the graphs by subject
+    plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='ratio', group=1)) + 
+      geom_point(size=2) + 
+      geom_line(aes_string(x=stim, y='pfit', group=1), size=1) +
+      facet_wrap(as.formula(paste("~", wid)))
+  }else{
+    dt.subj$ggcond = interaction(dt.subj[,match(vars,names(dt.subj))])
+    # Draw the graphs by subject
+    plot.bysubj = ggplot(dt.subj, aes_string(x=stim, y='ratio', group='ggcond')) + 
             geom_point(aes(group=ggcond, color=ggcond, shape=ggcond), size=2) + 
             geom_line(aes_string(x=stim, y='pfit', group='ggcond', color='ggcond'), size=1) +
             facet_wrap(as.formula(paste("~", wid)))
+  }
   if( !is.null(axnames) ){
     plot.bysubj = plot.bysubj + xlab(axnames[2]) + ylab(paste("Proportion of ", axnames[1], sep=''))
   }
@@ -205,7 +222,9 @@ psychophy <- function(data, wid='subject_nr', stim=NULL, resp='correct', vars=NU
     plot.avg.fit = plotPPCurve(descp_data.fit, vars=c(wid, vars), xvar=stim, resp='pfit', se=T, axnames=axnames)
   }
 
-  dt.subj = subset(dt.subj, select=-c(ggcond))
+  if( !is.null(vars) ){
+    dt.subj = subset(dt.subj, select=-c(ggcond))
+  }
   return(list(Means_per_subjects=dt.subj, Descript_data=descp_data, Fit=dtfitted,
               Graphs=list(BySubj=plot.bysubj, Global_Raw=plot.avg, Global_Fit=plot.avg.fit)))
 }
